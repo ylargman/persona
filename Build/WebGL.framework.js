@@ -1155,26 +1155,26 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 3748864: function() {
+ 3748976: function() {
   Module["emscripten_get_now_backup"] = performance.now;
  },
- 3748919: function($0) {
+ 3749031: function($0) {
   performance.now = function() {
    return $0;
   };
  },
- 3748967: function($0) {
+ 3749079: function($0) {
   performance.now = function() {
    return $0;
   };
  },
- 3749015: function() {
+ 3749127: function() {
   performance.now = Module["emscripten_get_now_backup"];
  },
- 3749070: function() {
+ 3749182: function() {
   return Module.webglContextAttributes.premultipliedAlpha;
  },
- 3749131: function() {
+ 3749243: function() {
   return Module.webglContextAttributes.preserveDrawingBuffer;
  }
 };
@@ -1276,6 +1276,10 @@ function stackTrace() {
  var js = jsStackTrace();
  if (Module["extraStackTrace"]) js += "\n" + Module["extraStackTrace"]();
  return demangleAll(js);
+}
+
+function _IsMobileBrowser() {
+ return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 }
 
 var JS_Accelerometer = null;
@@ -13345,6 +13349,7 @@ function intArrayFromString(stringy, dontAddNull, length) {
 }
 
 var asmLibraryArg = {
+ "IsMobileBrowser": _IsMobileBrowser,
  "JS_Accelerometer_IsRunning": _JS_Accelerometer_IsRunning,
  "JS_Accelerometer_Start": _JS_Accelerometer_Start,
  "JS_Accelerometer_Stop": _JS_Accelerometer_Stop,
