@@ -647,26 +647,7 @@ function cwrap(ident, returnType, argTypes, opts) {
  };
 }
 
-var ALLOC_NORMAL = 0;
-
 var ALLOC_STACK = 1;
-
-function allocate(slab, allocator) {
- var ret;
- assert(typeof allocator === "number", "allocate no longer takes a type argument");
- assert(typeof slab !== "number", "allocate no longer takes a number as arg0");
- if (allocator == ALLOC_STACK) {
-  ret = stackAlloc(slab.length);
- } else {
-  ret = _malloc(slab.length);
- }
- if (slab.subarray || slab.slice) {
-  HEAPU8.set(slab, ret);
- } else {
-  HEAPU8.set(new Uint8Array(slab), ret);
- }
- return ret;
-}
 
 var UTF8Decoder = typeof TextDecoder !== "undefined" ? new TextDecoder("utf8") : undefined;
 
@@ -1174,26 +1155,26 @@ var tempDouble;
 var tempI64;
 
 var ASM_CONSTS = {
- 3752552: function() {
+ 3748976: function() {
   Module["emscripten_get_now_backup"] = performance.now;
  },
- 3752607: function($0) {
+ 3749031: function($0) {
   performance.now = function() {
    return $0;
   };
  },
- 3752655: function($0) {
+ 3749079: function($0) {
   performance.now = function() {
    return $0;
   };
  },
- 3752703: function() {
+ 3749127: function() {
   performance.now = Module["emscripten_get_now_backup"];
  },
- 3752758: function() {
+ 3749182: function() {
   return Module.webglContextAttributes.premultipliedAlpha;
  },
- 3752819: function() {
+ 3749243: function() {
   return Module.webglContextAttributes.preserveDrawingBuffer;
  }
 };
@@ -2524,10 +2505,6 @@ function _JS_SystemInfo_HasWebGL() {
  return Module.SystemInfo.hasWebGL;
 }
 
-function _JS_SystemInfo_IsMobile() {
- return Module.SystemInfo.mobile;
-}
-
 function _JS_UnityEngineShouldQuit() {
  return !!Module.shouldQuit;
 }
@@ -2638,241 +2615,6 @@ function _JS_WebRequest_SetResponseHandler(request, arg, onresponse) {
 
 function _JS_WebRequest_SetTimeout(request, timeout) {
  wr.requestInstances[request].timeout = timeout;
-}
-
-var instances = [];
-
-function _WebGLInputCreate(canvasId, x, y, width, height, fontsize, text, placeholder, isMultiLine, isPassword, isHidden) {
- var container = document.getElementById(UTF8ToString(canvasId));
- var canvas = document.getElementsByTagName("canvas")[0];
- if (!container && canvas) {
-  container = canvas.parentNode;
- }
- if (canvas) {
-  var scaleX = container.offsetWidth / canvas.width;
-  var scaleY = container.offsetHeight / canvas.height;
-  if (scaleX && scaleY) {
-   x *= scaleX;
-   width *= scaleX;
-   y *= scaleY;
-   height *= scaleY;
-  }
- }
- var input = document.createElement(isMultiLine ? "textarea" : "input");
- input.style.position = "absolute";
- input.style.top = y + "px";
- input.style.left = x + "px";
- input.style.width = width + "px";
- input.style.height = height + "px";
- input.style.outlineWidth = 1 + "px";
- input.style.opacity = isHidden ? 0 : 1;
- input.style.resize = "none";
- input.style.padding = "0px 1px";
- input.style.cursor = "default";
- input.spellcheck = false;
- input.value = UTF8ToString(text);
- input.placeholder = UTF8ToString(placeholder);
- input.style.fontSize = fontsize + "px";
- if (isPassword) {
-  input.type = "password";
- }
- container.appendChild(input);
- return instances.push(input) - 1;
-}
-
-function _WebGLInputDelete(id) {
- var input = instances[id];
- input.parentNode.removeChild(input);
- instances[id] = null;
-}
-
-function _WebGLInputEnterSubmit(id, falg) {
- var input = instances[id];
- input.addEventListener("keydown", function(e) {
-  if (e.which && e.which === 13 || e.keyCode && e.keyCode === 13) {
-   if (falg) {
-    e.preventDefault();
-    input.blur();
-   }
-  }
- });
-}
-
-function _WebGLInputFocus(id) {
- var input = instances[id];
- input.focus();
-}
-
-function _WebGLInputInit() {
- if (typeof Runtime === "undefined") Runtime = {
-  dynCall: dynCall
- };
-}
-
-function _WebGLInputIsFocus(id) {
- return instances[id] === document.activeElement;
-}
-
-function _WebGLInputMaxLength(id, maxlength) {
- var input = instances[id];
- input.maxLength = maxlength;
-}
-
-function _WebGLInputMobileOnFocusOut(id, focusout) {
- document.body.addEventListener("focusout", function() {
-  document.body.removeEventListener("focusout", arguments.callee);
-  Runtime.dynCall("vi", focusout, [ id ]);
- });
-}
-
-function _WebGLInputMobileRegister(touchend) {
- var id = instances.push(null) - 1;
- document.body.addEventListener("touchend", function() {
-  document.body.removeEventListener("touchend", arguments.callee);
-  Runtime.dynCall("vi", touchend, [ id ]);
- });
- return id;
-}
-
-function _WebGLInputOnBlur(id, cb) {
- var input = instances[id];
- input.onblur = function() {
-  Runtime.dynCall("vi", cb, [ id ]);
- };
-}
-
-function _WebGLInputOnEditEnd(id, cb) {
- var input = instances[id];
- input.onchange = function() {
-  var value = allocate(intArrayFromString(input.value), ALLOC_NORMAL);
-  Runtime.dynCall("vii", cb, [ id, value ]);
- };
-}
-
-function _WebGLInputOnFocus(id, cb) {
- var input = instances[id];
- input.onfocus = function() {
-  Runtime.dynCall("vi", cb, [ id ]);
- };
-}
-
-function _WebGLInputOnValueChange(id, cb) {
- var input = instances[id];
- input.oninput = function() {
-  var value = allocate(intArrayFromString(input.value), ALLOC_NORMAL);
-  Runtime.dynCall("vii", cb, [ id, value ]);
- };
-}
-
-function _WebGLInputSelectionDirection(id) {
- var input = instances[id];
- return input.selectionDirection == "backward" ? -1 : 1;
-}
-
-function _WebGLInputSelectionEnd(id) {
- var input = instances[id];
- return input.selectionEnd;
-}
-
-function _WebGLInputSelectionStart(id) {
- var input = instances[id];
- return input.selectionStart;
-}
-
-function _WebGLInputSetSelectionRange(id, start, end) {
- var input = instances[id];
- input.setSelectionRange(start, end);
-}
-
-function _WebGLInputTab(id, cb) {
- var input = instances[id];
- input.addEventListener("keydown", function(e) {
-  if (e.which && e.which === 9 || e.keyCode && e.keyCode === 9) {
-   e.preventDefault();
-   if (input.enableTabText) {
-    var val = input.value;
-    var start = input.selectionStart;
-    var end = input.selectionEnd;
-    input.value = val.substr(0, start) + "\t" + val.substr(end, val.length);
-    input.setSelectionRange(start + 1, start + 1);
-    input.oninput();
-   } else {
-    Runtime.dynCall("vii", cb, [ id, e.shiftKey ? -1 : 1 ]);
-   }
-  }
- });
-}
-
-function _WebGLInputText(id, text) {
- var input = instances[id];
- input.value = UTF8ToString(text);
-}
-
-function _WebGLWindowInjectFullscreen() {
- document.makeFullscreen = function(id, keepAspectRatio) {
-  var getFullScreenObject = function() {
-   var doc = window.document;
-   var objFullScreen = doc.fullscreenElement || doc.mozFullScreenElement || doc.webkitFullscreenElement || doc.msFullscreenElement;
-   return objFullScreen;
-  };
-  var eventFullScreen = function(callback) {
-   document.addEventListener("fullscreenchange", callback, false);
-   document.addEventListener("webkitfullscreenchange", callback, false);
-   document.addEventListener("mozfullscreenchange", callback, false);
-   document.addEventListener("MSFullscreenChange", callback, false);
-  };
-  var removeEventFullScreen = function(callback) {
-   document.removeEventListener("fullscreenchange", callback, false);
-   document.removeEventListener("webkitfullscreenchange", callback, false);
-   document.removeEventListener("mozfullscreenchange", callback, false);
-   document.removeEventListener("MSFullscreenChange", callback, false);
-  };
-  var div = document.createElement("div");
-  document.body.appendChild(div);
-  var canvas = document.getElementById(id);
-  var beforeParent = canvas.parentNode;
-  var beforeStyle = window.getComputedStyle(canvas);
-  var beforeWidth = parseInt(beforeStyle.width);
-  var beforeHeight = parseInt(beforeStyle.height);
-  var index = Array.from(beforeParent.children).findIndex(function(v) {
-   return v == canvas;
-  });
-  div.appendChild(canvas);
-  var fullscreenFunc = function() {
-   if (getFullScreenObject()) {
-    if (keepAspectRatio) {
-     var ratio = Math.min(window.screen.width / beforeWidth, window.screen.height / beforeHeight);
-     var width = Math.floor(beforeWidth * ratio);
-     var height = Math.floor(beforeHeight * ratio);
-     canvas.style.width = width + "px";
-     canvas.style.height = height + "px";
-    } else {
-     canvas.style.width = window.screen.width + "px";
-     canvas.style.height = window.screen.height + "px";
-    }
-   } else {
-    canvas.style.width = beforeWidth + "px";
-    canvas.style.height = beforeHeight + "px";
-    beforeParent.insertBefore(canvas, Array.from(beforeParent.children)[index]);
-    div.parentNode.removeChild(div);
-    removeEventFullScreen(fullscreenFunc);
-   }
-  };
-  eventFullScreen(fullscreenFunc);
-  if (div.mozRequestFullScreen) div.mozRequestFullScreen(); else if (div.webkitRequestFullScreen) div.webkitRequestFullScreen(); else if (div.msRequestFullscreen) div.msRequestFullscreen(); else if (div.requestFullscreen) div.requestFullscreen();
- };
-}
-
-function _WebGLWindowOnBlur(cb) {
- window.addEventListener("blur", function() {
-  Runtime.dynCall("v", cb, []);
- });
-}
-
-function _WebGLWindowOnFocus(cb) {
- window.addEventListener("focus", function() {
-  Runtime.dynCall("v", cb, []);
- });
 }
 
 var ExceptionInfoAttrs = {
@@ -13670,7 +13412,6 @@ var asmLibraryArg = {
  "JS_SystemInfo_HasCursorLock": _JS_SystemInfo_HasCursorLock,
  "JS_SystemInfo_HasFullscreen": _JS_SystemInfo_HasFullscreen,
  "JS_SystemInfo_HasWebGL": _JS_SystemInfo_HasWebGL,
- "JS_SystemInfo_IsMobile": _JS_SystemInfo_IsMobile,
  "JS_UnityEngineShouldQuit": _JS_UnityEngineShouldQuit,
  "JS_WebRequest_Abort": _JS_WebRequest_Abort,
  "JS_WebRequest_Create": _JS_WebRequest_Create,
@@ -13681,28 +13422,6 @@ var asmLibraryArg = {
  "JS_WebRequest_SetRequestHeader": _JS_WebRequest_SetRequestHeader,
  "JS_WebRequest_SetResponseHandler": _JS_WebRequest_SetResponseHandler,
  "JS_WebRequest_SetTimeout": _JS_WebRequest_SetTimeout,
- "WebGLInputCreate": _WebGLInputCreate,
- "WebGLInputDelete": _WebGLInputDelete,
- "WebGLInputEnterSubmit": _WebGLInputEnterSubmit,
- "WebGLInputFocus": _WebGLInputFocus,
- "WebGLInputInit": _WebGLInputInit,
- "WebGLInputIsFocus": _WebGLInputIsFocus,
- "WebGLInputMaxLength": _WebGLInputMaxLength,
- "WebGLInputMobileOnFocusOut": _WebGLInputMobileOnFocusOut,
- "WebGLInputMobileRegister": _WebGLInputMobileRegister,
- "WebGLInputOnBlur": _WebGLInputOnBlur,
- "WebGLInputOnEditEnd": _WebGLInputOnEditEnd,
- "WebGLInputOnFocus": _WebGLInputOnFocus,
- "WebGLInputOnValueChange": _WebGLInputOnValueChange,
- "WebGLInputSelectionDirection": _WebGLInputSelectionDirection,
- "WebGLInputSelectionEnd": _WebGLInputSelectionEnd,
- "WebGLInputSelectionStart": _WebGLInputSelectionStart,
- "WebGLInputSetSelectionRange": _WebGLInputSetSelectionRange,
- "WebGLInputTab": _WebGLInputTab,
- "WebGLInputText": _WebGLInputText,
- "WebGLWindowInjectFullscreen": _WebGLWindowInjectFullscreen,
- "WebGLWindowOnBlur": _WebGLWindowOnBlur,
- "WebGLWindowOnFocus": _WebGLWindowOnFocus,
  "__cxa_allocate_exception": ___cxa_allocate_exception,
  "__cxa_atexit": ___cxa_atexit,
  "__cxa_begin_catch": ___cxa_begin_catch,
@@ -16945,10 +16664,6 @@ if (!Object.getOwnPropertyDescriptor(Module, "wr")) Module["wr"] = function() {
 
 if (!Object.getOwnPropertyDescriptor(Module, "IDBFS")) Module["IDBFS"] = function() {
  abort("'IDBFS' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the FAQ)");
-};
-
-if (!Object.getOwnPropertyDescriptor(Module, "instances")) Module["instances"] = function() {
- abort("'instances' was not exported. add it to EXPORTED_RUNTIME_METHODS (see the FAQ)");
 };
 
 if (!Object.getOwnPropertyDescriptor(Module, "emscriptenWebGLGetIndexed")) Module["emscriptenWebGLGetIndexed"] = function() {
